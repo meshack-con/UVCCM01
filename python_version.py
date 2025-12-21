@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 import base64
 import os
 
-# 1. Konfigureshon ya Ukurasa wa Streamlit
+# 1. Konfigureshon ya Ukurasa (Browser Tab)
 st.set_page_config(
     page_title="Master Admin System", 
     page_icon="meshack.png", 
@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Kazi ya kubadilisha picha kuwa Base64 ili ionekane ndani ya HTML na Manifest
+# 2. Kazi ya kubadilisha picha kuwa Base64 ili iweze kusomeka kila mahali
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -21,8 +21,9 @@ def get_base64_image(image_path):
 img_raw = get_base64_image("meshack.png")
 img_data = f"data:image/png;base64,{img_raw}" if img_raw else "https://via.placeholder.com/150"
 
-# Tengeneza Manifest kulingana na icon yako
-manifest_data = f"""
+# 3. PWA INJECTION - Hii inalazimisha Icon na Jina lako lionekane kwenye simu
+# Inakaa nje ya iframe ili iwe na nguvu zaidi (Root Level)
+manifest_json = f"""
 {{
   "name": "Master Admin System",
   "short_name": "MasterAdmin",
@@ -31,33 +32,32 @@ manifest_data = f"""
   "background_color": "#061a06",
   "theme_color": "#15803d",
   "icons": [
-    {{
-      "src": "{img_data}",
-      "sizes": "192x192",
-      "type": "image/png"
-    }},
-    {{
-      "src": "{img_data}",
-      "sizes": "512x512",
-      "type": "image/png"
-    }}
+    {{ "src": "{img_data}", "sizes": "192x192", "type": "image/png" }},
+    {{ "src": "{img_data}", "sizes": "512x512", "type": "image/png" }}
   ]
 }}
 """
-manifest_base64 = base64.b64encode(manifest_data.encode()).decode()
+manifest_b64 = base64.b64encode(manifest_json.encode()).decode()
 
-# 3. Ficha vitu vya Streamlit (Header, Footer, Menu)
-st.markdown("""
+st.markdown(f"""
+    <head>
+        <link rel="manifest" href="data:application/manifest+json;base64,{manifest_b64}">
+        <link rel="apple-touch-icon" href="{img_data}">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="Master Admin">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="#15803d">
+    </head>
     <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .block-container {padding: 0px !important;}
-    iframe {border: none !important;}
+        #MainMenu {{visibility: hidden;}}
+        footer {{visibility: hidden;}}
+        header {{visibility: hidden;}}
+        .block-container {{padding: 0px !important;}}
+        iframe {{border: none !important;}}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# 4. FULL CODE YA HTML/JS/CSS (Imeongezewa PWA Tags pekee)
+# 4. FULL CODE YA SYSTEM (HTML/JS/CSS)
 full_custom_code = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -65,12 +65,6 @@ full_custom_code = f"""
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Admin | Full System</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="{img_data}">
-    <link rel="manifest" href="data:application/manifest+json;base64,{manifest_base64}">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -82,7 +76,6 @@ full_custom_code = f"""
         .stat-card {{ transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border-left: 4px solid #eab308; }}
         .gradient-green {{ background: linear-gradient(135deg, #15803d 0%, #166534 100%); }}
         
-        /* Spinner Style */
         .spinner-container {{ position: relative; width: 106px; height: 106px; display: flex; align-items: center; justify-content: center; }}
         .loader-ring {{
             position: absolute; width: 100%; height: 100%; border: 3px solid transparent;
@@ -97,12 +90,6 @@ full_custom_code = f"""
     </style>
 </head>
 <body x-data="adminApp()" x-init="init()" x-cloak class="antialiased">
-
-    <script>
-        if ('serviceWorker' in navigator) {{
-            navigator.serviceWorker.register('data:text/javascript;base64,{base64.b64encode(b"self.addEventListener('fetch', function(event) {});").decode()}');
-        }}
-    </script>
 
     <template x-if="!session">
         <div class="flex items-start justify-center min-h-screen bg-[#061a06] px-4 pt-12 md:pt-20 relative overflow-hidden">
