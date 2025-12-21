@@ -6,18 +6,45 @@ import os
 # 1. Konfigureshon ya Ukurasa wa Streamlit
 st.set_page_config(
     page_title="Master Admin System", 
+    page_icon="meshack.png", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
 
-# 2. Kazi ya kubadilisha picha kuwa Base64 ili ionekane ndani ya HTML
+# 2. Kazi ya kubadilisha picha kuwa Base64 ili ionekane ndani ya HTML na Manifest
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
-            return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
-    return "https://via.placeholder.com/150" # Picha ya akiba isipopatikana
+            return base64.b64encode(img_file.read()).decode()
+    return ""
 
-img_data = get_base64_image("meshack.png")
+img_raw = get_base64_image("meshack.png")
+img_data = f"data:image/png;base64,{img_raw}" if img_raw else "https://via.placeholder.com/150"
+
+# Tengeneza Manifest kulingana na icon yako
+manifest_data = f"""
+{{
+  "name": "Master Admin System",
+  "short_name": "MasterAdmin",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#061a06",
+  "theme_color": "#15803d",
+  "icons": [
+    {{
+      "src": "{img_data}",
+      "sizes": "192x192",
+      "type": "image/png"
+    }},
+    {{
+      "src": "{img_data}",
+      "sizes": "512x512",
+      "type": "image/png"
+    }}
+  ]
+}}
+"""
+manifest_base64 = base64.b64encode(manifest_data.encode()).decode()
 
 # 3. Ficha vitu vya Streamlit (Header, Footer, Menu)
 st.markdown("""
@@ -30,7 +57,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 4. FULL CODE YA HTML/JS/CSS
+# 4. FULL CODE YA HTML/JS/CSS (Imeongezewa PWA Tags pekee)
 full_custom_code = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -38,6 +65,12 @@ full_custom_code = f"""
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Master Admin | Full System</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{img_data}">
+    <link rel="manifest" href="data:application/manifest+json;base64,{manifest_base64}">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -64,6 +97,12 @@ full_custom_code = f"""
     </style>
 </head>
 <body x-data="adminApp()" x-init="init()" x-cloak class="antialiased">
+
+    <script>
+        if ('serviceWorker' in navigator) {{
+            navigator.serviceWorker.register('data:text/javascript;base64,{base64.b64encode(b"self.addEventListener('fetch', function(event) {});").decode()}');
+        }}
+    </script>
 
     <template x-if="!session">
         <div class="flex items-start justify-center min-h-screen bg-[#061a06] px-4 pt-12 md:pt-20 relative overflow-hidden">
@@ -296,5 +335,4 @@ full_custom_code = f"""
 """
 
 # 5. KU-RENDER KWENYE STREAMLIT
-# Height imewekwa kubwa (1500) ili kusiwe na scroll mbili (moja ya streamlit moja ya HTML)
 components.html(full_custom_code, height=1500, scrolling=True)
