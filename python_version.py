@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Kazi ya kubadilisha picha kuwa Base64
+# 2. Kazi ya kubadilisha picha kuwa Base64 (Kwa ajili ya Logo na PWA)
 def get_base64_image(image_path):
     if os.path.exists(image_path):
         with open(image_path, "rb") as img_file:
@@ -21,7 +21,7 @@ def get_base64_image(image_path):
 img_raw = get_base64_image("meshack.png")
 img_data = f"data:image/png;base64,{img_raw}" if img_raw else "https://via.placeholder.com/150"
 
-# 3. PWA INJECTION
+# 3. PWA INJECTION (Hii inafanya mfumo uonekane kama App kwenye simu)
 manifest_json = f"""
 {{
   "name": "Master Admin System",
@@ -91,7 +91,6 @@ full_custom_code = f"""
     <template x-if="!session">
         <div class="flex items-start justify-center min-h-screen bg-[#061a06] px-4 pt-12 md:pt-20 relative overflow-hidden">
             <div class="absolute w-64 h-64 md:w-96 md:h-96 bg-green-600/20 rounded-full blur-[80px] -top-20 -left-20"></div>
-            <div class="absolute w-64 h-64 md:w-96 md:h-96 bg-yellow-500/10 rounded-full blur-[80px] -bottom-20 -right-20"></div>
             
             <div class="max-w-md w-full glass p-8 md:p-10 rounded-[2.5rem] shadow-2xl text-center z-10 border border-green-900/10">
                 <div class="flex justify-center mb-6">
@@ -113,7 +112,7 @@ full_custom_code = f"""
                     </div>
                     <div class="relative">
                         <label class="text-[10px] font-black text-green-800 uppercase ml-2 mb-1 block">Password</label>
-                        <input :type="showPass ? 'text' : 'password'" x-model="loginData.pass" placeholder="Ingiza Password" 
+                        <input type="password" x-model="loginData.pass" placeholder="Ingiza Password" 
                             class="w-full p-4 bg-green-50/50 border border-green-100 rounded-2xl outline-none focus:ring-2 focus:ring-green-500/20 transition-all font-semibold">
                     </div>
                     <button @click="login" :disabled="isLoading" 
@@ -184,7 +183,7 @@ full_custom_code = f"""
                             <button @click="tab = 'vyuo'" :class="tab === 'vyuo' ? 'bg-green-700 text-yellow-400' : 'text-green-800'" class="px-6 py-3 rounded-xl text-xs font-black uppercase whitespace-nowrap">Vyuo</button>
                             <button @click="tab = 'baraza'" :class="tab === 'baraza' ? 'bg-green-700 text-yellow-400' : 'text-green-800'" class="px-6 py-3 rounded-xl text-xs font-black uppercase whitespace-nowrap">Wajumbe Baraza</button>
                             <button @click="tab = 'matawi'" :class="tab === 'matawi' ? 'bg-green-700 text-yellow-400' : 'text-green-800'" class="px-6 py-3 rounded-xl text-xs font-black uppercase whitespace-nowrap">Viongozi Matawi</button>
-                            <button @click="tab = 'watumiaji'; loadWatumiaji();" :class="tab === 'watumiaji' ? 'bg-yellow-500 text-white' : 'text-green-800'" class="px-6 py-3 rounded-xl text-xs font-black uppercase whitespace-nowrap border-l border-green-200">Watumiaji 🔐</button>
+                            <button @click="tab = 'watumiaji'; loadWatumiaji();" :class="tab === 'watumiaji' ? 'bg-yellow-500 text-white' : 'text-green-800'" class="px-6 py-3 rounded-xl text-xs font-black uppercase whitespace-nowrap border-l border-green-200">Watumiaji & Access 🔐</button>
                         </div>
                         <button x-show="tab !== 'watumiaji'" @click="exportCSV" class="w-full md:w-auto gradient-green text-yellow-400 px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase">Download CSV</button>
                     </div>
@@ -215,45 +214,43 @@ full_custom_code = f"""
                                             <span class="w-3 h-3 bg-yellow-500 rounded-full"></span> Sajili New User
                                         </h3>
                                         <div class="space-y-4">
-                                            <div>
-                                                <label class="text-[10px] font-black text-green-800 uppercase ml-1 block mb-1">Jina Kamili</label>
-                                                <input type="text" x-model="newUser.jina_kamili" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
-                                            </div>
-                                            <div>
-                                                <label class="text-[10px] font-black text-green-800 uppercase ml-1 block mb-1">Username</label>
-                                                <input type="text" x-model="newUser.username" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
-                                            </div>
-                                            <div>
-                                                <label class="text-[10px] font-black text-green-800 uppercase ml-1 block mb-1">Password</label>
-                                                <input type="password" x-model="newUser.password" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
-                                            </div>
-                                            <button @click="saveNewUser" :disabled="isSaving" class="w-full gradient-green text-yellow-400 py-4 rounded-xl font-black uppercase text-xs mt-4">
+                                            <input type="text" x-model="newUser.jina_kamili" placeholder="Jina Kamili" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
+                                            <input type="text" x-model="newUser.username" placeholder="Username" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
+                                            <input type="password" x-model="newUser.password" placeholder="Password" class="w-full p-4 bg-white rounded-xl border border-green-200 outline-none font-bold text-sm">
+                                            <button @click="saveNewUser" :disabled="isSaving" class="w-full gradient-green text-yellow-400 py-4 rounded-xl font-black uppercase text-xs">
                                                 <span x-show="!isSaving">HIFADHI MTUMIAJI</span>
                                                 <span x-show="isSaving">INASAJILI...</span>
                                             </button>
                                         </div>
                                     </div>
                                     <div class="lg:col-span-8">
-                                        <div class="flex justify-between items-center mb-4">
-                                            <h3 class="text-lg font-black text-green-900 uppercase">Watumiaji Waliopo</h3>
-                                            <span class="text-[10px] font-black text-green-600 bg-green-100 px-3 py-1 rounded-full uppercase" x-text="allUsers.length + ' USERS TOTAL'"></span>
-                                        </div>
                                         <div class="bg-white border border-green-50 rounded-[1.5rem] overflow-hidden shadow-sm">
                                             <table class="w-full text-left">
                                                 <thead class="bg-green-900 text-yellow-400 text-[10px] font-black uppercase">
                                                     <tr>
-                                                        <th class="p-5">Jina Kamili</th>
-                                                        <th class="p-5">Username</th>
+                                                        <th class="p-5">Mtumiaji</th>
                                                         <th class="p-5">Hali</th>
+                                                        <th class="p-5">Action</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="divide-y divide-green-50">
                                                     <template x-for="u in allUsers" :key="u.id">
                                                         <tr class="hover:bg-green-50 transition-colors">
-                                                            <td class="p-5 font-black text-green-900" x-text="u.jina_kamili"></td>
-                                                            <td class="p-5 font-bold text-green-600" x-text="u.username"></td>
+                                                            <td class="p-5 font-black text-green-900">
+                                                                <div x-text="u.jina_kamili"></div>
+                                                                <div class="text-[9px] text-green-600 uppercase" x-text="u.username"></div>
+                                                            </td>
                                                             <td class="p-5">
-                                                                <span class="text-[9px] font-black text-green-700 bg-green-100 px-2 py-1 rounded-md uppercase">ACTIVE</span>
+                                                                <span :class="u.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" 
+                                                                    class="text-[9px] font-black px-2 py-1 rounded uppercase" 
+                                                                    x-text="u.is_active !== false ? 'ACTIVE' : 'BLOCKED'"></span>
+                                                            </td>
+                                                            <td class="p-5">
+                                                                <button @click="toggleUserAccess(u)" 
+                                                                    :class="u.is_active !== false ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'"
+                                                                    class="text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all">
+                                                                    <span x-text="u.is_active !== false ? 'Block' : 'Unblock'"></span>
+                                                                </button>
                                                             </td>
                                                         </tr>
                                                     </template>
@@ -315,7 +312,7 @@ full_custom_code = f"""
                 session: JSON.parse(localStorage.getItem('admin_session')) || null,
                 isLoading: false, tab: 'vyuo', isSaving: false,
                 loginData: {{ user: '', pass: '' }},
-                newUser: {{ jina_kamili: '', username: '', password: '' }},
+                newUser: {{ jina_kamili: '', username: '', password: '', is_active: true }},
                 selectedRegion: 'ALL',
                 uniqueMikoa: [], allVyuo: [], allBaraza: [], allMatawi: [], allUsers: [],
                 filteredVyuo: [], filteredBaraza: [], filteredMatawi: [],
@@ -326,8 +323,10 @@ full_custom_code = f"""
                     this.isLoading = true;
                     try {{
                         const {{ data }} = await client.from('watumiaji').select('*').eq('username', this.loginData.user).eq('password', this.loginData.pass).single();
-                        if(data) {{ this.session = data; localStorage.setItem('admin_session', JSON.stringify(data)); await this.loadAll(); }}
-                        else alert("Zingatia: Username au Password sio sahihi!");
+                        if(data) {{
+                            if(data.is_active === false) {{ alert("Access Denied: Account yako imezuiwa na Admin!"); }}
+                            else {{ this.session = data; localStorage.setItem('admin_session', JSON.stringify(data)); await this.loadAll(); }}
+                        }} else {{ alert("Username au Password siyo sahihi!"); }}
                     }} catch(e) {{ alert("Database Error!"); }} finally {{ this.isLoading = false; }}
                 }},
 
@@ -347,20 +346,28 @@ full_custom_code = f"""
                 }},
 
                 async loadWatumiaji() {{
-                    const {{ data }} = await client.from('watumiaji').select('id, jina_kamili, username').order('jina_kamili');
+                    const {{ data }} = await client.from('watumiaji').select('*').order('jina_kamili');
                     this.allUsers = data || [];
                 }},
 
                 async saveNewUser() {{
-                    if(!this.newUser.jina_kamili || !this.newUser.username || !this.newUser.password) return alert("Tafadhali jaza nafasi zote!");
+                    if(!this.newUser.username || !this.newUser.password) return alert("Jaza taarifa zote!");
                     this.isSaving = true;
                     try {{
-                        const {{ error }} = await client.from('watumiaji').insert([this.newUser]);
-                        if(error) throw error;
+                        await client.from('watumiaji').insert([this.newUser]);
                         alert("Mtumiaji amesajiliwa!");
-                        this.newUser = {{ jina_kamili: '', username: '', password: '' }};
+                        this.newUser = {{ jina_kamili: '', username: '', password: '', is_active: true }};
                         await this.loadWatumiaji();
-                    }} catch(e) {{ alert("Kosa wakati wa kusave!"); }} finally {{ this.isSaving = false; }}
+                    }} catch(e) {{ alert("Error!"); }} finally {{ this.isSaving = false; }}
+                }},
+
+                async toggleUserAccess(user) {{
+                    const newStatus = user.is_active === false ? true : false;
+                    try {{
+                        const {{ error }} = await client.from('watumiaji').update({{ is_active: newStatus }}).eq('id', user.id);
+                        if(error) throw error;
+                        await this.loadWatumiaji();
+                    }} catch(e) {{ alert("Imeshindwa kubadilisha access!"); }}
                 }},
 
                 applyFilter() {{
