@@ -98,8 +98,16 @@ full_custom_code = f"""
                         <h3 class="text-3xl font-black" x-text="allVyuo.length">0</h3>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-green-600">
-                        <p class="text-[9px] font-black uppercase text-slate-400">Senate</p>
+                        <p class="text-[9px] font-black uppercase text-slate-400">Senate (Viongozi)</p>
                         <h3 class="text-3xl font-black" x-text="allBaraza.length">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-blue-600">
+                        <p class="text-[9px] font-black uppercase text-slate-400">Viongozi Matawi</p>
+                        <h3 class="text-3xl font-black" x-text="allMatawi.length">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-purple-600">
+                        <p class="text-[9px] font-black uppercase text-slate-400">Mikoa</p>
+                        <h3 class="text-3xl font-black" x-text="uniqueMikoa.length">0</h3>
                     </div>
                 </div>
 
@@ -119,8 +127,8 @@ full_custom_code = f"""
                 <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border">
                     <div class="p-4 border-b bg-green-50/50 flex space-x-2 overflow-x-auto no-scrollbar">
                         <button @click="tab = 'vyuo'" :class="tab === 'vyuo' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Vyuo</button>
-                        <button @click="tab = 'baraza'" :class="tab === 'baraza' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Baraza</button>
-                        <button @click="tab = 'matawi'" :class="tab === 'matawi' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Matawi</button>
+                        <button @click="tab = 'baraza'" :class="tab === 'baraza' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Viongozi Senate</button>
+                        <button @click="tab = 'matawi'" :class="tab === 'matawi' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Viongozi Matawi</button>
                         <button @click="tab = 'users'" :class="tab === 'users' ? 'bg-yellow-500 text-green-900' : 'bg-slate-100 text-slate-500'" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Manage Users</button>
                     </div>
 
@@ -144,6 +152,46 @@ full_custom_code = f"""
                             </div>
                         </template>
 
+                        <template x-if="tab === 'baraza'">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-50 text-[9px] font-black uppercase">
+                                        <tr><th class="p-6">Jina</th><th class="p-6">Nafasi</th><th class="p-6">Chuo</th><th class="p-6">Simu</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="b in filteredBaraza" :key="b.id">
+                                            <tr class="border-b hover:bg-green-50/30">
+                                                <td class="p-6 font-black" x-text="b.jina"></td>
+                                                <td class="p-6 text-green-700 font-bold" x-text="b.nafasi"></td>
+                                                <td class="p-6 font-bold" x-text="b.vyuo?.jina_la_chuo || '-'"></td>
+                                                <td class="p-6" x-text="b.namba_ya_simu"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+
+                        <template x-if="tab === 'matawi'">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-50 text-[9px] font-black uppercase">
+                                        <tr><th class="p-6">Jina</th><th class="p-6">Cheo</th><th class="p-6">Chuo</th><th class="p-6">Simu</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="m in filteredMatawi" :key="m.id">
+                                            <tr class="border-b hover:bg-green-50/30">
+                                                <td class="p-6 font-black" x-text="m.jina"></td>
+                                                <td class="p-6 text-blue-700 font-bold" x-text="m.cheo"></td>
+                                                <td class="p-6 font-bold" x-text="m.vyuo?.jina_la_chuo || '-'"></td>
+                                                <td class="p-6" x-text="m.namba_ya_simu"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+
                         <template x-if="tab === 'users'">
                             <div class="p-6 space-y-6">
                                 <div class="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200">
@@ -154,7 +202,6 @@ full_custom_code = f"""
                                         <button @click="addUser" class="bg-green-800 text-white rounded-xl font-black uppercase text-[10px]">Ongeza Sasa</button>
                                     </div>
                                 </div>
-
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left">
                                         <thead class="text-[9px] font-black uppercase text-slate-400">
@@ -164,22 +211,13 @@ full_custom_code = f"""
                                             <template x-for="u in allUsers" :key="u.id">
                                                 <tr class="border-b">
                                                     <td class="p-4 font-bold" x-text="u.username"></td>
-                                                    <td class="p-4">
-                                                        <button @click="deleteUser(u.id)" class="text-red-500 font-black text-[10px] uppercase">Futa</button>
-                                                    </td>
+                                                    <td class="p-4"><button @click="deleteUser(u.id)" class="text-red-500 font-black text-[10px] uppercase">Futa</button></td>
                                                 </tr>
                                             </template>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                        </template>
-                        
-                        <template x-if="tab === 'baraza'">
-                             <div class="p-10 text-center text-slate-400 font-bold uppercase text-[10px]">Data za Senate zinaonyeshwa hapa...</div>
-                        </template>
-                        <template x-if="tab === 'matawi'">
-                             <div class="p-10 text-center text-slate-400 font-bold uppercase text-[10px]">Data za Matawi zinaonyeshwa hapa...</div>
                         </template>
                     </div>
                 </div>
@@ -274,8 +312,13 @@ full_custom_code = f"""
                     if (this.tab === 'vyuo') {{
                         headers = "Mkoa,Chuo,UVCCM\\n";
                         dataToExport = this.filteredVyuo.map(v => `"${{v.mkoa}}","${{v.jina_la_chuo}}","${{v.ina_uvccm}}"`);
-                    }} 
-                    // Unaweza kuongeza masharti ya baraza/matawi hapa...
+                    }} else if (this.tab === 'baraza') {{
+                        headers = "Jina,Nafasi,Chuo,Simu\\n";
+                        dataToExport = this.filteredBaraza.map(b => `"${{b.jina}}","${{b.nafasi}}","${{b.vyuo?.jina_la_chuo}}","${{b.namba_ya_simu}}"`);
+                    }} else if (this.tab === 'matawi') {{
+                        headers = "Jina,Cheo,Chuo,Simu\\n";
+                        dataToExport = this.filteredMatawi.map(m => `"${{m.jina}}","${{m.cheo}}","${{m.vyuo?.jina_la_chuo}}","${{m.namba_ya_simu}}"`);
+                    }}
 
                     const csvContent = headers + dataToExport.join("\\n");
                     const blob = new Blob([csvContent], {{ type: 'text/csv' }});
