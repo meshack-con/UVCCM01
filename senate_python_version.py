@@ -1,291 +1,242 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import base64
-import os
 
-# 1. Configuration ya Ukurasa
-st.set_page_config(page_title="Senate Management Portal", layout="wide", initial_sidebar_state="collapsed")
+# 1. Config ya Streamlit
+st.set_page_config(page_title="Smart-Hifadhi Cloud", layout="wide")
 
-# 2. Picha ya Base64 (User Avatar)
-def get_base64_image(image_path):
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
-            return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
-    return "https://via.placeholder.com/150"
-
-img_data = get_base64_image("meshack.png")
-
-# 3. Ficha Alama za Streamlit
+# 2. Ficha Header na Padding za Streamlit
 st.markdown("""
     <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .block-container {padding: 0px !important;}
-    iframe {border: none !important;}
+        .block-container { padding: 0rem; }
+        header { visibility: hidden; }
+        footer { visibility: hidden; }
+        iframe { border: none; }
     </style>
     """, unsafe_allow_html=True)
 
-# 4. Full HTML/JS/CSS Code
-full_custom_code = f"""
+# 3. Credentials zako za Supabase
+SUPABASE_URL = "https://bzolhpmorjkdjfaotjgg.supabase.co"
+SUPABASE_KEY = "sb_publishable_DQIXCrVzqf-OPtZBnouoGA_FkroIASY"
+
+# 4. HTML, CSS, na JS Code
+html_code = f"""
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sw">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Senate Management System | Modern</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Smart-Hifadhi Pro v6.0 | Supabase</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        body {{ font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f0f4f8; color: #1e293b; margin:0; padding:0; }}
-        [x-cloak] {{ display: none !important; }}
-        .glass-card {{ background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.5); }}
-        .input-focus {{ transition: all 0.3s ease; border: 2px solid #e2e8f0; }}
-        .input-focus:focus {{ border-color: #059669; background: white; box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1); }}
-        
-        .loader-ring {{
-            position: absolute; width: 100%; height: 100%; border: 3px solid transparent;
-            border-top-color: #10b981; border-right-color: #10b981; border-radius: 50%;
-            animation: spin 0.8s linear infinite; top: 0; left: 0;
+        :root {{ 
+            --primary: #4361ee; --success: #2ecc71; --danger: #e74c3c; 
+            --warning: #f1c40f; --dark: #0f172a; --bg: #f1f5f9; --white: #ffffff;
         }}
-        @keyframes spin {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+        body {{ font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--dark); }}
+        .header {{ background: var(--dark); color: white; padding: 60px 20px; text-align: center; }}
+        
+        .stats-grid {{ 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; max-width: 1200px; margin: -40px auto 20px auto; padding: 0 20px; 
+        }}
+        .stat-card {{ 
+            background: var(--white); padding: 25px; border-radius: 20px; 
+            box-shadow: 0 10px 15px rgba(0,0,0,0.05); text-align: center; 
+        }}
+        .stat-card .amount {{ font-size: 1.6rem; font-weight: 800; margin-top: 8px; display: block; }}
+
+        .container {{ max-width: 1200px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 1fr 350px; gap: 30px; }}
+        @media (max-width: 900px) {{ .container {{ grid-template-columns: 1fr; }} }}
+        
+        .card {{ background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 25px; }}
+        input, select {{ width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; margin-top: 10px; box-sizing: border-box; }}
+        .btn {{ width: 100%; padding: 16px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 15px; }}
+        .btn:active {{ transform: scale(0.98); }}
+        
+        .alert-box {{ background: #e0f2fe; border-left: 5px solid var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 25px; font-size: 0.9rem; }}
+        .bar-bg {{ background: #e2e8f0; height: 10px; border-radius: 50px; margin-top: 10px; overflow: hidden; }}
+        .bar-fill {{ background: var(--success); height: 100%; width: 0%; transition: 1s ease-in-out; }}
     </style>
 </head>
-<body x-data="app()" x-init="init()" x-cloak>
+<body>
 
-    <template x-if="!session">
-        <div class="flex items-start justify-center min-h-screen bg-[#0f172a] px-4 pt-12 md:pt-20 relative overflow-hidden">
-            <div class="absolute w-96 h-96 bg-emerald-600/20 rounded-full blur-[100px] -top-20 -left-20"></div>
+<div class="header">
+    <h1 style="margin:0;">Smart-Hifadhi Pro 💎</h1>
+    <p style="opacity:0.8;">Cloud Managed by Supabase</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><h4>Uwekezaji (50%)</h4><span class="amount" id="dashInvest" style="color:var(--success)">0</span></div>
+    <div class="stat-card"><h4>Lazima (20%)</h4><span class="amount" id="dashEss" style="color:var(--primary)">0</span></div>
+    <div class="stat-card"><h4>Sio Lazima (10%)</h4><span class="amount" id="dashLife" style="color:var(--warning)">0</span></div>
+    <div class="stat-card"><h4>Emergency (10%)</h4><span class="amount" id="dashEmerg" style="color:var(--danger)">0</span></div>
+</div>
+
+<div class="container">
+    <main>
+        <div id="status" class="alert-box">🔄 Inasawazisha na Supabase Cloud...</div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card">
+                <h3>💰 Ingiza Mapato</h3>
+                <input type="number" id="incomeVal" placeholder="Kiasi (TSH)">
+                <button class="btn" onclick="handleIncome()">Hifadhi & Gawa</button>
+            </div>
+            <div class="card">
+                <h3>💸 Tumia Fedha</h3>
+                <input type="number" id="expenseVal" placeholder="Kiasi (TSH)">
+                <select id="expenseType">
+                    <option value="invest_acc">Kutoka 'Uwekezaji'</option>
+                    <option value="essential_acc">Kutoka 'Lazima'</option>
+                    <option value="life_acc">Kutoka 'Sio Lazima'</option>
+                    <option value="emergency_acc">Kutoka 'Emergency'</option>
+                </select>
+                <button class="btn" style="background:var(--dark)" onclick="handleExpense()">Toa Pesa</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📊 Mwenendo wa Akaunti</h3>
+            <div style="max-width: 400px; margin: 0 auto;">
+                <canvas id="healthChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <aside>
+        <div class="card">
+            <h3>🎯 Lengo la Uwekezaji</h3>
+            <div id="goalText" style="font-weight:700; color:var(--primary); margin-bottom:5px;">0% Imekamilika</div>
+            <div class="bar-bg"><div id="goalBar" class="bar-fill"></div></div>
+            <input type="number" id="goalVal" placeholder="Weka Lengo la Mwaka" style="margin-top:20px;">
+            <button class="btn" style="background:var(--success)" onclick="updateGoal()">Weka Lengo</button>
+        </div>
+
+        <div class="card">
+            <h3>📜 Miamala ya Karibuni</h3>
+            <div id="txList" style="font-size: 0.85rem; max-height: 300px; overflow-y: auto;">
+                Inatafuta miamala...
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const _client = supabase.createClient("{SUPABASE_URL}", "{SUPABASE_KEY}");
+    let currentBalances = {{}};
+
+    const f = (n) => new Intl.NumberFormat('en-TZ').format(Math.round(n || 0));
+
+    async function init() {{
+        try {{
+            // 1. Fetch Balances
+            const {{ data: bal, error: e1 }} = await _client.from('balances').select('*').eq('id', 1).single();
+            if (e1) throw e1;
+            currentBalances = bal;
+
+            // 2. Fetch Settings (Goal)
+            const {{ data: set, error: e2 }} = await _client.from('settings').select('*').eq('id', 1).single();
+            if (e2) throw e2;
             
-            <div class="max-w-md w-full glass-card p-10 rounded-[2.5rem] shadow-2xl text-center relative z-10">
-                <div class="relative w-24 h-24 mx-auto mb-6">
-                    <div x-show="loading" class="loader-ring"></div>
-                    <img src="{img_data}" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
-                </div>
-                <h2 class="text-2xl font-black text-slate-800 mb-1 uppercase tracking-tighter">Senate Login</h2>
-                <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-8">Private Dashboard Access</p>
-                
-                <div class="space-y-4 text-left">
-                    <div>
-                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 mb-1 block">Username</label>
-                        <input type="text" x-model="loginData.user" class="w-full p-4 bg-slate-100/50 rounded-2xl outline-none input-focus font-semibold" placeholder="Username">
-                    </div>
-                    <div class="relative">
-                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 mb-1 block">Password</label>
-                        <input :type="showPass ? 'text' : 'password'" x-model="loginData.pass" class="w-full p-4 bg-slate-100/50 rounded-2xl outline-none input-focus font-semibold pr-12" placeholder="••••••••">
-                        <button @click="showPass = !showPass" class="absolute right-4 top-[38px] text-slate-400">
-                             <svg x-show="!showPass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.644C3.399 8.049 7.21 5 12 5c4.79 0 8.601 3.049 9.964 6.678a1.012 1.012 0 010 .644C20.601 15.951 16.79 19 12 19c-4.79 0-8.601-3.049-9.964-6.678z"/></svg>
-                             <svg x-show="showPass" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
-                        </button>
-                    </div>
-                    <button @click="login" :disabled="loading" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all uppercase tracking-widest mt-4">
-                        <span x-text="loading ? 'AUTHENTICATING...' : 'SIGN IN'"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </template>
+            // 3. Fetch Recent Transactions
+            const {{ data: txs }} = await _client.from('transactions').select('*').order('created_at', {{ ascending: false }}).limit(5);
 
-    <template x-if="session">
-        <div class="min-h-screen pb-20">
-            <nav class="glass-card sticky top-0 z-50 px-6 py-4 flex justify-between items-center shadow-sm border-b">
-                <div class="flex flex-col">
-                    <div class="flex items-center space-x-3 mb-3">
-                        <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-black text-sm">S</div>
-                        <span class="font-black text-lg tracking-tighter text-slate-800 uppercase">Senate System</span>
-                    </div>
-                    <div class="flex items-center bg-slate-100 p-1 rounded-xl w-fit">
-                        <button @click="tab = 'colleges'" :class="tab === 'colleges' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'" class="px-5 py-1.5 rounded-lg font-bold text-[11px] transition-all">Colleges</button>
-                        <button @click="tab = 'leaders'" :class="tab === 'leaders' ? 'bg-white shadow-sm text-emerald-600' : 'text-slate-500'" class="px-5 py-1.5 rounded-lg font-bold text-[11px] transition-all">Leaders</button>
-                    </div>
-                </div>
-                
-                <div class="flex items-center space-x-4">
-                    <span class="hidden md:block text-[10px] font-black text-slate-400 uppercase" x-text="'Active: ' + session.username"></span>
-                    <button @click="logout" class="bg-red-50 text-red-500 font-black text-[10px] px-4 py-2 rounded-xl hover:bg-red-100 uppercase tracking-widest transition-colors">Logout</button>
-                </div>
-            </nav>
-
-            <div class="max-w-7xl mx-auto px-6 mt-8">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                        <p class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-1">My Colleges</p>
-                        <h3 class="text-3xl font-black text-slate-800" x-text="vyuo.length">0</h3>
-                    </div>
-                    <div class="bg-emerald-600 p-6 rounded-[2rem] shadow-xl shadow-emerald-900/10">
-                        <p class="text-emerald-100 text-[9px] font-black uppercase tracking-[0.2em] mb-1">UVCCM Branches</p>
-                        <h3 class="text-3xl font-black text-white" x-text="vyuo.filter(v => v.ina_uvccm).length">0</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                        <p class="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em] mb-1">My Leaders</p>
-                        <h3 class="text-3xl font-black text-blue-600" x-text="viongozi.length">0</h3>
-                    </div>
-                </div>
-
-                <div x-show="tab === 'colleges'" class="grid lg:grid-cols-12 gap-8" x-transition>
-                    <div class="lg:col-span-4">
-                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
-                            <h3 class="text-xl font-black mb-6 text-slate-800">Register College</h3>
-                            <div class="space-y-4">
-                                <input type="text" x-model="formChuo.mkoa" placeholder="Region (Mkoa)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <input type="text" x-model="formChuo.jina" placeholder="College Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <select x-model="formChuo.aina" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-bold text-sm">
-                                    <option>Chuo Kikuu</option><option>Chuo cha Kati</option>
-                                </select>
-                                <label class="flex items-center space-x-3 p-4 bg-slate-50 rounded-2xl cursor-pointer">
-                                    <input type="checkbox" x-model="formChuo.uvccm" class="w-5 h-5 accent-emerald-600">
-                                    <span class="text-sm font-bold text-slate-600">Has UVCCM Branch</span>
-                                </label>
-                                <button @click="saveChuo" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-black transition-all shadow-lg uppercase tracking-widest">Save Record</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-8">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
-                                    <tr><th class="p-6">College Details</th><th class="p-6">Type</th><th class="p-6">Status</th><th class="p-6"></th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    <template x-for="v in vyuo" :key="v.id">
-                                        <tr class="hover:bg-slate-50/50">
-                                            <td class="p-6">
-                                                <div class="font-black text-slate-800 text-sm" x-text="v.jina_la_chuo"></div>
-                                                <div class="text-[10px] text-emerald-600 font-bold uppercase" x-text="v.mkoa"></div>
-                                            </td>
-                                            <td class="p-6 text-[10px] font-bold text-slate-500 uppercase" x-text="v.aina_ya_chuo"></td>
-                                            <td class="p-6">
-                                                <span :class="v.ina_uvccm ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'" class="px-3 py-1 rounded-full text-[9px] font-black" x-text="v.ina_uvccm ? 'UVCCM: YES' : 'UVCCM: NO'"></span>
-                                            </td>
-                                            <td class="p-6 text-right">
-                                                <button @click="deleteChuo(v.id)" class="text-red-300 hover:text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div x-show="tab === 'leaders'" class="grid lg:grid-cols-12 gap-8" x-transition>
-                    <div class="lg:col-span-4">
-                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
-                            <h3 class="text-xl font-black mb-6 text-slate-800">Register Leader</h3>
-                            <div class="space-y-4">
-                                <input type="text" x-model="formKiongozi.jina" placeholder="Full Name" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <input type="text" x-model="formKiongozi.nafasi" placeholder="Position" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <input type="text" x-model="formKiongozi.degree" placeholder="Course/Degree" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <input type="tel" x-model="formKiongozi.phone" placeholder="Phone Number" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-semibold">
-                                <select x-model="formKiongozi.chuo_id" class="w-full p-4 bg-slate-50 rounded-2xl outline-none input-focus font-bold text-sm">
-                                    <option value="">-- Select College --</option>
-                                    <template x-for="v in vyuo" :key="v.id"><option :value="v.id" x-text="v.jina_la_chuo"></option></template>
-                                </select>
-                                <button @click="saveKiongozi" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black hover:bg-emerald-700 shadow-lg uppercase tracking-widest">Submit Leader</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="lg:col-span-8">
-                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
-                                    <tr><th class="p-6">Leader Profile</th><th class="p-6">Assignment</th><th class="p-6"></th></tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-50">
-                                    <template x-for="k in viongozi" :key="k.id">
-                                        <tr class="hover:bg-slate-50/50">
-                                            <td class="p-6">
-                                                <div class="font-black text-slate-800 text-sm" x-text="k.jina_kamili"></div>
-                                                <div class="text-[10px] text-slate-400 font-bold uppercase" x-text="k.degree_programme"></div>
-                                                <div class="text-[10px] text-emerald-600 font-bold" x-text="k.phone_number"></div>
-                                            </td>
-                                            <td class="p-6">
-                                                <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[9px] font-black uppercase" x-text="k.nafasi_ya_uongozi"></span>
-                                                <div class="text-[10px] text-slate-400 mt-1 italic font-bold" x-text="k.vyuo?.jina_la_chuo"></div>
-                                            </td>
-                                            <td class="p-6 text-right">
-                                                <button @click="deleteKiongozi(k.id)" class="text-red-300 hover:text-red-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <script>
-        const {{ createClient }} = supabase;
-        const client = createClient('https://xickklzlmwaobzobwyws.supabase.co', 'sb_publishable_94BpD9gpOpYyWryIhzBjog_kxQRAG4W');
-
-        function app() {{
-            return {{
-                session: JSON.parse(localStorage.getItem('sen_session')) || null,
-                tab: 'colleges', loading: false, showPass: false,
-                loginData: {{ user: '', pass: '' }},
-                vyuo: [], viongozi: [],
-                formChuo: {{ id: null, jina: '', mkoa: '', aina: 'Chuo Kikuu', uvccm: false }},
-                formKiongozi: {{ id: null, jina: '', nafasi: '', degree: '', phone: '', mwaka: 'Year 1', chuo_id: '' }},
-
-                async init() {{ if (this.session) await this.fetchData(); }},
-
-                async login() {{
-                    this.loading = true;
-                    try {{
-                        const {{ data }} = await client.from('watumiaji').select('*').eq('username', this.loginData.user).eq('password', this.loginData.pass).single();
-                        if (data) {{
-                            this.session = data;
-                            localStorage.setItem('sen_session', JSON.stringify(data));
-                            await this.fetchData();
-                        }} else {{ alert("Login Failed!"); }}
-                    }} catch(e) {{ alert("Database Connection Error"); }}
-                    finally {{ this.loading = false; }}
-                }},
-
-                logout() {{ localStorage.removeItem('sen_session'); this.session = null; }},
-
-                async fetchData() {{
-                    if (!this.session) return;
-                    const resV = await client.from('vyuo').select('*').eq('created_by', this.session.id).order('jina_la_chuo');
-                    this.vyuo = resV.data || [];
-                    const resK = await client.from('viongozi').select('*, vyuo(jina_la_chuo)').eq('created_by', this.session.id).order('created_at', {{ascending: false}});
-                    this.viongozi = resK.data || [];
-                }},
-
-                async saveChuo() {{
-                    if(!this.formChuo.mkoa || !this.formChuo.jina) {{ alert("Fill all fields"); return; }}
-                    await client.from('vyuo').insert([{{ 
-                        jina_la_chuo: this.formChuo.jina, mkoa: this.formChuo.mkoa, aina_ya_chuo: this.formChuo.aina, 
-                        ina_uvccm: this.formChuo.uvccm, created_by: this.session.id 
-                    }}]);
-                    this.formChuo = {{ id: null, jina: '', mkoa: '', aina: 'Chuo Kikuu', uvccm: false }};
-                    await this.fetchData();
-                }},
-
-                async saveKiongozi() {{
-                    if(!this.formKiongozi.chuo_id || !this.formKiongozi.jina) {{ alert("Fill all fields"); return; }}
-                    await client.from('viongozi').insert([{{ 
-                        jina_kamili: this.formKiongozi.jina, nafasi_ya_uongozi: this.formKiongozi.nafasi, 
-                        degree_programme: this.formKiongozi.degree, phone_number: this.formKiongozi.phone,
-                        mwaka_wa_masomo: this.formKiongozi.mwaka, chuo_id: this.formKiongozi.chuo_id, created_by: this.session.id 
-                    }}]);
-                    this.formKiongozi = {{ id: null, jina: '', nafasi: '', degree: '', phone: '', mwaka: 'Year 1', chuo_id: '' }};
-                    await this.fetchData();
-                }},
-
-                async deleteChuo(id) {{ if(confirm("Delete this college?")) {{ await client.from('vyuo').delete().eq('id', id); await this.fetchData(); }} }},
-                async deleteKiongozi(id) {{ if(confirm("Remove this leader?")) {{ await client.from('viongozi').delete().eq('id', id); await this.fetchData(); }} }}
-            }}
+            render(bal, set.yearly_goal, txs);
+            document.getElementById('status').innerText = "✅ Cloud imesawazishwa!";
+        }} catch (err) {{
+            console.error(err);
+            document.getElementById('status').innerText = "❌ Hitilafu ya kuunganisha Database!";
         }}
-    </script>
+    }}
+
+    async function handleIncome() {{
+        const amt = parseFloat(document.getElementById('incomeVal').value);
+        if(!amt) return;
+
+        const update = {{
+            invest_acc: currentBalances.invest_acc + (amt * 0.50),
+            essential_acc: currentBalances.essential_acc + (amt * 0.20),
+            life_acc: currentBalances.life_acc + (amt * 0.10),
+            emergency_acc: currentBalances.emergency_acc + (amt * 0.10),
+            tithe_acc: currentBalances.tithe_acc + (amt * 0.10)
+        }};
+
+        await _client.from('balances').update(update).eq('id', 1);
+        await _client.from('transactions').insert([{{ type: 'In', category: 'Mapato', amount: amt, invested_amount: amt*0.5 }}]);
+        
+        document.getElementById('incomeVal').value = '';
+        init();
+    }
+
+    async function handleExpense() {{
+        const amt = parseFloat(document.getElementById('expenseVal').value);
+        const cat = document.getElementById('expenseType').value;
+        if(!amt || amt > currentBalances[cat]) return alert("Salio halitoshi!");
+
+        const update = {{}};
+        update[cat] = currentBalances[cat] - amt;
+
+        await _client.from('balances').update(update).eq('id', 1);
+        await _client.from('transactions').insert([{{ type: 'Out', category: cat, amount: amt }}]);
+        
+        document.getElementById('expenseVal').value = '';
+        init();
+    }
+
+    async function updateGoal() {{
+        const g = parseFloat(document.getElementById('goalVal').value);
+        await _client.from('settings').update({{ yearly_goal: g }}).eq('id', 1);
+        init();
+    }}
+
+    function render(bal, goal, txs) {{
+        document.getElementById('dashInvest').innerText = f(bal.invest_acc);
+        document.getElementById('dashEss').innerText = f(bal.essential_acc);
+        document.getElementById('dashLife').innerText = f(bal.life_acc);
+        document.getElementById('dashEmerg').innerText = f(bal.emergency_acc);
+
+        // Progress Bar
+        const pc = goal > 0 ? (bal.invest_acc / goal) * 100 : 0;
+        document.getElementById('goalBar').style.width = Math.min(pc, 100) + "%";
+        document.getElementById('goalText').innerText = pc.toFixed(1) + "% Imekamilika";
+
+        // Tx List
+        const listHtml = txs.map(t => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
+                <span>${{t.category}}</span>
+                <b style="color:${{t.type==='In'?'green':'red'}}">${{t.type==='In'?'+':'-'}}${{f(t.amount)}}</b>
+            </div>
+        `).join('');
+        document.getElementById('txList').innerHTML = listHtml;
+
+        updateChart(bal);
+    }}
+
+    let chart;
+    function updateChart(bal) {{
+        const ctx = document.getElementById('healthChart').getContext('2d');
+        if(chart) chart.destroy();
+        chart = new Chart(ctx, {{
+            type: 'doughnut',
+            data: {{
+                labels: ['Invest', 'Essential', 'Lifestyle', 'Emergency'],
+                datasets: [{{
+                    data: [bal.invest_acc, bal.essential_acc, bal.life_acc, bal.emergency_acc],
+                    backgroundColor: ['#2ecc71', '#4361ee', '#f1c40f', '#e74c3c'],
+                    borderWidth: 0
+                }}]
+            }},
+            options: {{ cutout: '75%', plugins: {{ legend: {{ position: 'bottom' }} }} }}
+        }});
+    }}
+
+    init();
+</script>
 </body>
 </html>
 """
 
-# Render
-components.html(full_custom_code, height=1200, scrolling=True)
+# 5. Execute
+components.html(html_code, height=1200, scrolling=True)
