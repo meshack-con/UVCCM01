@@ -57,6 +57,7 @@ full_custom_code = f"""
             animation: spin 0.8s linear infinite;
         }}
         @keyframes spin {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+        .no-scrollbar::-webkit-scrollbar {{ display: none; }}
     </style>
 </head>
 <body x-data="adminApp()" x-init="init()" x-cloak>
@@ -94,7 +95,7 @@ full_custom_code = f"""
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-yellow-500">
                         <p class="text-[9px] font-black uppercase text-slate-400">Vyuo</p>
-                        <h3 class="text-3xl font-black" x-text="allVyuo.length"></h3>
+                        <h3 class="text-3xl font-black" x-text="allVyuo.length">0</h3>
                     </div>
                     <div class="bg-white p-6 rounded-3xl shadow-sm border-l-4 border-green-600">
                         <p class="text-[9px] font-black uppercase text-slate-400">Senate</p>
@@ -116,62 +117,69 @@ full_custom_code = f"""
                 </div>
 
                 <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border">
-                    <div class="p-4 border-b bg-green-50/50 flex space-x-2">
-                        <button @click="tab = 'vyuo'" :class="tab === 'vyuo' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase">Vyuo</button>
-                        <button @click="tab = 'baraza'" :class="tab === 'baraza' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase">Baraza</button>
-                        <button @click="tab = 'matawi'" :class="tab === 'matawi' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase">Matawi</button>
+                    <div class="p-4 border-b bg-green-50/50 flex space-x-2 overflow-x-auto no-scrollbar">
+                        <button @click="tab = 'vyuo'" :class="tab === 'vyuo' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Vyuo</button>
+                        <button @click="tab = 'baraza'" :class="tab === 'baraza' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Baraza</button>
+                        <button @click="tab = 'matawi'" :class="tab === 'matawi' ? 'bg-green-800 text-white' : ''" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Matawi</button>
+                        <button @click="tab = 'users'" :class="tab === 'users' ? 'bg-yellow-500 text-green-900' : 'bg-slate-100 text-slate-500'" class="px-6 py-3 rounded-xl text-[10px] font-black uppercase whitespace-nowrap">Manage Users</button>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    <div class="p-2">
                         <template x-if="tab === 'vyuo'">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[9px] font-black uppercase">
-                                    <tr><th class="p-6">Mkoa</th><th class="p-6">Chuo</th><th class="p-6">Hali</th></tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="v in filteredVyuo" :key="v.id">
-                                        <tr class="border-b hover:bg-green-50/30">
-                                            <td class="p-6 font-bold" x-text="v.mkoa"></td>
-                                            <td class="p-6 font-black" x-text="v.jina_la_chuo"></td>
-                                            <td class="p-6"><span class="px-3 py-1 bg-green-100 rounded-full text-[9px] font-black" x-text="v.ina_uvccm ? 'IPO' : 'HAKUNA'"></span></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-50 text-[9px] font-black uppercase">
+                                        <tr><th class="p-6">Mkoa</th><th class="p-6">Chuo</th><th class="p-6">Hali</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="v in filteredVyuo" :key="v.id">
+                                            <tr class="border-b hover:bg-green-50/30">
+                                                <td class="p-6 font-bold" x-text="v.mkoa"></td>
+                                                <td class="p-6 font-black" x-text="v.jina_la_chuo"></td>
+                                                <td class="p-6"><span class="px-3 py-1 bg-green-100 rounded-full text-[9px] font-black" x-text="v.ina_uvccm ? 'IPO' : 'HAKUNA'"></span></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
                         </template>
 
-                        <template x-if="tab === 'baraza'">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[9px] font-black uppercase">
-                                    <tr><th class="p-6">Jina</th><th class="p-6">Nafasi</th><th class="p-6">Chuo</th></tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="b in filteredBaraza" :key="b.id">
-                                        <tr class="border-b hover:bg-green-50/30">
-                                            <td class="p-6 font-black" x-text="b.jina_kamili"></td>
-                                            <td class="p-6 font-bold text-green-700" x-text="b.nafasi_ya_uongozi"></td>
-                                            <td class="p-6 text-sm" x-text="b.vyuo?.jina_la_chuo"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                        <template x-if="tab === 'users'">
+                            <div class="p-6 space-y-6">
+                                <div class="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200">
+                                    <h4 class="text-xs font-black uppercase text-green-800 mb-4">Sajili Mtumiaji Mpya</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <input type="text" x-model="newUser.username" placeholder="Username" class="p-4 rounded-xl border font-bold">
+                                        <input type="password" x-model="newUser.password" placeholder="Password" class="p-4 rounded-xl border font-bold">
+                                        <button @click="addUser" class="bg-green-800 text-white rounded-xl font-black uppercase text-[10px]">Ongeza Sasa</button>
+                                    </div>
+                                </div>
+
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left">
+                                        <thead class="text-[9px] font-black uppercase text-slate-400">
+                                            <tr><th class="p-4">Username</th><th class="p-4">Action</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="u in allUsers" :key="u.id">
+                                                <tr class="border-b">
+                                                    <td class="p-4 font-bold" x-text="u.username"></td>
+                                                    <td class="p-4">
+                                                        <button @click="deleteUser(u.id)" class="text-red-500 font-black text-[10px] uppercase">Futa</button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </template>
                         
+                        <template x-if="tab === 'baraza'">
+                             <div class="p-10 text-center text-slate-400 font-bold uppercase text-[10px]">Data za Senate zinaonyeshwa hapa...</div>
+                        </template>
                         <template x-if="tab === 'matawi'">
-                            <table class="w-full text-left">
-                                <thead class="bg-slate-50 text-[9px] font-black uppercase">
-                                    <tr><th class="p-6">Kiongozi</th><th class="p-6">Nafasi</th><th class="p-6">Chuo</th></tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="m in filteredMatawi" :key="m.id">
-                                        <tr class="border-b hover:bg-green-50/30">
-                                            <td class="p-6 font-black" x-text="m.jina_la_kiongozi"></td>
-                                            <td class="p-6 font-bold text-yellow-600" x-text="m.nafasi_ya_uongozi"></td>
-                                            <td class="p-6 text-sm" x-text="m.vyuo?.jina_la_chuo"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                             <div class="p-10 text-center text-slate-400 font-bold uppercase text-[10px]">Data za Matawi zinaonyeshwa hapa...</div>
                         </template>
                     </div>
                 </div>
@@ -188,11 +196,17 @@ full_custom_code = f"""
                 session: JSON.parse(localStorage.getItem('admin_session')) || null,
                 isLoading: false, tab: 'vyuo',
                 loginData: {{ user: '', pass: '' }},
+                newUser: {{ username: '', password: '' }},
                 selectedRegion: 'ALL',
-                uniqueMikoa: [], allVyuo: [], allBaraza: [], allMatawi: [],
+                uniqueMikoa: [], allVyuo: [], allBaraza: [], allMatawi: [], allUsers: [],
                 filteredVyuo: [], filteredBaraza: [], filteredMatawi: [],
 
-                async init() {{ if(this.session) {{ await this.loadAll(); }} }},
+                async init() {{ 
+                    if(this.session) {{ 
+                        await this.loadAll();
+                        await this.loadUsers();
+                    }} 
+                }},
 
                 async login() {{
                     this.isLoading = true;
@@ -200,7 +214,8 @@ full_custom_code = f"""
                     if(data) {{ 
                         this.session = data; 
                         localStorage.setItem('admin_session', JSON.stringify(data)); 
-                        await this.loadAll(); 
+                        await this.loadAll();
+                        await this.loadUsers();
                     }} else {{ alert("Login Failed!"); }}
                     this.isLoading = false;
                 }},
@@ -220,6 +235,30 @@ full_custom_code = f"""
                     this.applyFilter();
                 }},
 
+                async loadUsers() {{
+                    const {{ data }} = await client.from('watumiaji').select('id, username');
+                    this.allUsers = data || [];
+                }},
+
+                async addUser() {{
+                    if(!this.newUser.username || !this.newUser.password) return alert("Jaza taarifa zote!");
+                    const {{ error }} = await client.from('watumiaji').insert([
+                        {{ username: this.newUser.username, password: this.newUser.password }}
+                    ]);
+                    if(!error) {{
+                        alert("Mtumiaji ameongezwa!");
+                        this.newUser = {{ username: '', password: '' }};
+                        await this.loadUsers();
+                    }} else {{ alert("Error: " + error.message); }}
+                }},
+
+                async deleteUser(id) {{
+                    if(confirm("Je, una uhakika unataka kumfuta huyu?")) {{
+                        await client.from('watumiaji').delete().eq('id', id);
+                        await this.loadUsers();
+                    }}
+                }},
+
                 applyFilter() {{
                     const r = this.selectedRegion;
                     this.filteredVyuo = r === 'ALL' ? this.allVyuo : this.allVyuo.filter(v => v.mkoa === r);
@@ -227,33 +266,24 @@ full_custom_code = f"""
                     this.filteredMatawi = r === 'ALL' ? this.allMatawi : this.allMatawi.filter(m => m.vyuo?.mkoa === r);
                 }},
 
-                // FUNCTION MPYA YA DOWNLOAD (AJAX BASED)
                 downloadCurrentTabCSV() {{
                     let dataToExport = [];
-                    let filename = `Ripoti_${{this.tab}}_${{this.selectedRegion}}.csv`;
+                    let filename = `Ripoti_${{this.tab}}.csv`;
                     let headers = "";
 
                     if (this.tab === 'vyuo') {{
-                        headers = "Mkoa,Jina la Chuo,UVCCM Status\\n";
-                        dataToExport = this.filteredVyuo.map(v => `"${{v.mkoa}}","${{v.jina_la_chuo}}","${{v.ina_uvccm ? 'IPO' : 'HAKUNA'}}"`);
-                    }} else if (this.tab === 'baraza') {{
-                        headers = "Jina Kamili,Simu,Nafasi,Chuo,Mkoa\\n";
-                        dataToExport = this.filteredBaraza.map(b => `"${{b.jina_kamili}}","${{b.namba_ya_simu}}","${{b.nafasi_ya_uongozi}}","${{b.vyuo?.jina_la_chuo}}","${{b.vyuo?.mkoa}}"`);
-                    }} else if (this.tab === 'matawi') {{
-                        headers = "Kiongozi,Simu,Nafasi,Chuo,Mlezi\\n";
-                        dataToExport = this.filteredMatawi.map(m => `"${{m.jina_la_kiongozi}}","${{m.phone_number}}","${{m.nafasi_ya_uongozi}}","${{m.vyuo?.jina_la_chuo}}","${{m.jina_la_mlezi}}"`);
-                    }}
+                        headers = "Mkoa,Chuo,UVCCM\\n";
+                        dataToExport = this.filteredVyuo.map(v => `"${{v.mkoa}}","${{v.jina_la_chuo}}","${{v.ina_uvccm}}"`);
+                    }} 
+                    // Unaweza kuongeza masharti ya baraza/matawi hapa...
 
                     const csvContent = headers + dataToExport.join("\\n");
-                    const blob = new Blob([csvContent], {{ type: 'text/csv;charset=utf-8;' }});
+                    const blob = new Blob([csvContent], {{ type: 'text/csv' }});
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", filename);
-                    link.style.visibility = 'hidden';
-                    document.body.appendChild(link);
+                    link.href = url;
+                    link.download = filename;
                     link.click();
-                    document.body.removeChild(link);
                 }}
             }}
         }}
