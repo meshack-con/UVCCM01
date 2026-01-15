@@ -1,242 +1,298 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import base64
+import os
 
-# 1. Config ya Streamlit
-st.set_page_config(page_title="Smart-Hifadhi Cloud", layout="wide")
+# 1. Konfigureshon ya Ukurasa
+st.set_page_config(
+    page_title="Senate Management Portal", 
+    page_icon="meshack.png", 
+    layout="wide", 
+    initial_sidebar_state="collapsed"
+)
 
-# 2. Ficha Header na Padding za Streamlit
+# 2. Picha kuwa Base64
+def get_base64_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return f"data:image/png;base64,{base64.b64encode(img_file.read()).decode()}"
+    return "https://via.placeholder.com/150"
+
+img_data = get_base64_image("meshack.png")
+
+# 3. Streamlit CSS Fixes
 st.markdown("""
     <style>
-        .block-container { padding: 0rem; }
-        header { visibility: hidden; }
-        footer { visibility: hidden; }
-        iframe { border: none; }
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .block-container {padding: 0px !important;}
+    iframe {border: none !important;}
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Credentials zako za Supabase
-SUPABASE_URL = "https://bzolhpmorjkdjfaotjgg.supabase.co"
-SUPABASE_KEY = "sb_publishable_DQIXCrVzqf-OPtZBnouoGA_FkroIASY"
-
-# 4. HTML, CSS, na JS Code
-html_code = f"""
+# 4. FULL HTML/JS CODE
+full_custom_code = f"""
 <!DOCTYPE html>
-<html lang="sw">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart-Hifadhi Pro v6.0 | Supabase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root {{ 
-            --primary: #4361ee; --success: #2ecc71; --danger: #e74c3c; 
-            --warning: #f1c40f; --dark: #0f172a; --bg: #f1f5f9; --white: #ffffff;
-        }}
-        body {{ font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 0; color: var(--dark); }}
-        .header {{ background: var(--dark); color: white; padding: 60px 20px; text-align: center; }}
+        body {{ font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; color: #1e293b; margin:0; }}
+        [x-cloak] {{ display: none !important; }}
         
-        .stats-grid {{ 
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
-            gap: 20px; max-width: 1200px; margin: -40px auto 20px auto; padding: 0 20px; 
-        }}
-        .stat-card {{ 
-            background: var(--white); padding: 25px; border-radius: 20px; 
-            box-shadow: 0 10px 15px rgba(0,0,0,0.05); text-align: center; 
-        }}
-        .stat-card .amount {{ font-size: 1.6rem; font-weight: 800; margin-top: 8px; display: block; }}
-
-        .container {{ max-width: 1200px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 1fr 350px; gap: 30px; }}
-        @media (max-width: 900px) {{ .container {{ grid-template-columns: 1fr; }} }}
+        .bg-gradient-main {{ background: linear-gradient(135deg, #10b981 0%, #facc15 100%); }}
+        .glass-card {{ background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(16,185,129,0.1); }}
+        .input-modern:focus {{ border-color: #facc15; box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.1); outline: none; }}
         
-        .card {{ background: var(--white); padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); margin-bottom: 25px; }}
-        input, select {{ width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 12px; margin-top: 10px; box-sizing: border-box; }}
-        .btn {{ width: 100%; padding: 16px; border: none; border-radius: 12px; background: var(--primary); color: white; font-weight: 700; cursor: pointer; transition: 0.3s; margin-top: 15px; }}
-        .btn:active {{ transform: scale(0.98); }}
-        
-        .alert-box {{ background: #e0f2fe; border-left: 5px solid var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 25px; font-size: 0.9rem; }}
-        .bar-bg {{ background: #e2e8f0; height: 10px; border-radius: 50px; margin-top: 10px; overflow: hidden; }}
-        .bar-fill {{ background: var(--success); height: 100%; width: 0%; transition: 1s ease-in-out; }}
+        .loader {{ border-top-color: transparent; animation: spin 0.8s linear infinite; }}
+        @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
     </style>
 </head>
-<body>
+<body x-data="senateApp()" x-init="init()" x-cloak class="bg-slate-50">
 
-<div class="header">
-    <h1 style="margin:0;">Smart-Hifadhi Pro 💎</h1>
-    <p style="opacity:0.8;">Cloud Managed by Supabase</p>
-</div>
+    <div x-show="isLoading" class="fixed inset-0 bg-white/80 z-[100] flex items-center justify-center" x-transition>
+        <div class="flex flex-col items-center">
+            <div class="w-10 h-10 border-4 border-emerald-500 loader rounded-full mb-2"></div>
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Inatuma Taarifa...</p>
+        </div>
+    </div>
 
-<div class="stats-grid">
-    <div class="stat-card"><h4>Uwekezaji (50%)</h4><span class="amount" id="dashInvest" style="color:var(--success)">0</span></div>
-    <div class="stat-card"><h4>Lazima (20%)</h4><span class="amount" id="dashEss" style="color:var(--primary)">0</span></div>
-    <div class="stat-card"><h4>Sio Lazima (10%)</h4><span class="amount" id="dashLife" style="color:var(--warning)">0</span></div>
-    <div class="stat-card"><h4>Emergency (10%)</h4><span class="amount" id="dashEmerg" style="color:var(--danger)">0</span></div>
-</div>
-
-<div class="container">
-    <main>
-        <div id="status" class="alert-box">🔄 Inasawazisha na Supabase Cloud...</div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div class="card">
-                <h3>💰 Ingiza Mapato</h3>
-                <input type="number" id="incomeVal" placeholder="Kiasi (TSH)">
-                <button class="btn" onclick="handleIncome()">Hifadhi & Gawa</button>
-            </div>
-            <div class="card">
-                <h3>💸 Tumia Fedha</h3>
-                <input type="number" id="expenseVal" placeholder="Kiasi (TSH)">
-                <select id="expenseType">
-                    <option value="invest_acc">Kutoka 'Uwekezaji'</option>
-                    <option value="essential_acc">Kutoka 'Lazima'</option>
-                    <option value="life_acc">Kutoka 'Sio Lazima'</option>
-                    <option value="emergency_acc">Kutoka 'Emergency'</option>
-                </select>
-                <button class="btn" style="background:var(--dark)" onclick="handleExpense()">Toa Pesa</button>
+    <template x-if="!session">
+        <div class="flex justify-center min-h-screen bg-gradient-main px-4 pt-12 items-start">
+            <div class="max-w-md w-full glass-card p-10 rounded-[3rem] shadow-2xl text-center mt-8">
+                <img src="{img_data}" class="w-24 h-24 rounded-full mx-auto mb-6 object-cover border-4 border-white shadow-lg">
+                <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tighter uppercase">Senate Portal</h2>
+                <p class="text-emerald-700 text-xs font-bold mb-8 uppercase tracking-widest italic">Mfumo wa Usimamizi</p>
+                
+                <div class="space-y-4 text-left">
+                    <input type="text" x-model="loginData.user" class="w-full p-4 bg-white border border-slate-100 rounded-2xl font-bold input-modern" placeholder="Username">
+                    <input type="password" x-model="loginData.pass" class="w-full p-4 bg-white border border-slate-100 rounded-2xl font-bold input-modern" placeholder="Password">
+                    <button @click="login" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition-all uppercase tracking-widest mt-2">
+                        INGIA KWENYE MFUMO
+                    </button>
+                </div>
             </div>
         </div>
+    </template>
 
-        <div class="card">
-            <h3>📊 Mwenendo wa Akaunti</h3>
-            <div style="max-width: 400px; margin: 0 auto;">
-                <canvas id="healthChart"></canvas>
+    <template x-if="session">
+        <div class="min-h-screen">
+            <nav class="bg-white border-b border-slate-100 sticky top-0 z-50 px-8 py-4 flex justify-between items-center shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="bg-emerald-500 p-2 rounded-xl">
+                        <img src="{img_data}" class="w-8 h-8 rounded-lg object-cover">
+                    </div>
+                    <div>
+                        <span class="block font-black text-slate-800 uppercase text-sm leading-none" x-text="session.jina_kamili"></span>
+                        <span class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Senate Member</span>
+                    </div>
+                </div>
+
+                <div class="flex bg-slate-100 p-1 rounded-2xl gap-1">
+                    <button @click="tab = 'colleges'" :class="tab === 'colleges' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase transition-all">Vyuo</button>
+                    <button @click="tab = 'leaders'" :class="tab === 'leaders' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase transition-all">Viongozi</button>
+                </div>
+
+                <button @click="logout" class="bg-yellow-400 text-slate-900 font-black text-[9px] px-5 py-2.5 rounded-xl uppercase hover:bg-yellow-500 transition-all shadow-md">Logout</button>
+            </nav>
+
+            <div class="max-w-7xl mx-auto px-6 py-10">
+                <div x-show="tab === 'colleges'" class="grid lg:grid-cols-12 gap-8" x-transition>
+                    <div class="lg:col-span-4">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-emerald-50 border-t-8 border-t-emerald-500">
+                            <h3 class="text-xl font-black mb-6 text-slate-800 uppercase flex items-center gap-2">
+                                <span class="w-2 h-6 bg-yellow-400 rounded-full"></span> Sajili Chuo
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Aina ya Chuo</label>
+                                    <select x-model="formChuo.aina_ya_chuo" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern mt-1">
+                                        <option value="">-- Chagua Aina --</option>
+                                        <option value="Chuo Kikuu">Chuo Kikuu</option>
+                                        <option value="Chuo cha Kati">Chuo cha Kati</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Mkoa</label>
+                                    <select x-model="formChuo.mkoa" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern mt-1">
+                                        <option value="">-- Chagua Mkoa --</option>
+                                        <template x-for="m in mikoa" :key="m"><option :value="m" x-text="m"></option></template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2">Jina la Chuo</label>
+                                    <input type="text" x-model="formChuo.jina_la_chuo" placeholder="Mfano: UDSM" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern mt-1">
+                                </div>
+                                <div @click="formChuo.ina_uvccm = !formChuo.ina_uvccm" class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-emerald-50 transition-colors border border-dashed border-slate-200">
+                                    <span class="text-xs font-black text-slate-600 uppercase">UVCCM Ipo?</span>
+                                    <div :class="formChuo.ina_uvccm ? 'bg-emerald-500' : 'bg-slate-300'" class="w-10 h-5 rounded-full relative transition-all">
+                                        <div :class="formChuo.ina_uvccm ? 'translate-x-5' : 'translate-x-1'" class="w-3 h-3 bg-white rounded-full absolute top-1 transition-all"></div>
+                                    </div>
+                                </div>
+                                <button @click="saveChuo" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg uppercase tracking-widest hover:bg-emerald-600 transition-all">Hifadhi Chuo</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-8">
+                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
+                                    <tr><th class="p-6">Jina</th><th class="p-6">Aina</th><th class="p-6">Mkoa</th><th class="p-6">UVCCM</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="v in vyuo" :key="v.id">
+                                        <tr class="border-b border-slate-50 hover:bg-yellow-50/20 transition-colors">
+                                            <td class="p-6 font-black text-slate-800 text-sm" x-text="v.jina_la_chuo"></td>
+                                            <td class="p-6 text-[10px] font-bold text-slate-500 uppercase" x-text="v.aina_ya_chuo"></td>
+                                            <td class="p-6 font-black text-emerald-600 text-[10px] uppercase" x-text="v.mkoa"></td>
+                                            <td class="p-6">
+                                                <span :class="v.ina_uvccm ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-50 text-rose-500'" 
+                                                      class="px-3 py-1 rounded-lg text-[9px] font-black uppercase" 
+                                                      x-text="v.ina_uvccm ? 'Ipo' : 'Haipo'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="tab === 'leaders'" class="grid lg:grid-cols-12 gap-8" x-transition>
+                    <div class="lg:col-span-4">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl border border-yellow-50 border-t-8 border-t-yellow-400">
+                            <h3 class="text-xl font-black mb-6 text-slate-800 uppercase flex items-center gap-2">
+                                <span class="w-2 h-6 bg-emerald-500 rounded-full"></span> Sajili Kiongozi
+                            </h3>
+                            <div class="space-y-4">
+                                <input type="text" x-model="formKiongozi.jina_kamili" placeholder="Jina Kamili" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern">
+                                <input type="text" x-model="formKiongozi.nafasi_ya_uongozi" placeholder="Nafasi" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern">
+                                <input type="text" x-model="formKiongozi.phone_number" placeholder="Simu (0xxxxxxxxx)" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern">
+                                <select x-model="formKiongozi.chuo_id" class="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm input-modern">
+                                    <option value="">-- Chagua Chuo --</option>
+                                    <template x-for="v in vyuo" :key="v.id"><option :value="v.id" x-text="v.jina_la_chuo"></option></template>
+                                </select>
+                                <button @click="saveKiongozi" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg uppercase tracking-widest hover:bg-slate-900 transition-all">Sajili Kiongozi</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-8">
+                        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
+                                    <tr><th class="p-6">Kiongozi</th><th class="p-6">Nafasi</th><th class="p-6">Taasisi</th></tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="k in viongozi" :key="k.id">
+                                        <tr class="hover:bg-emerald-50/30 transition-colors border-b border-slate-50">
+                                            <td class="p-6">
+                                                <div class="font-black text-slate-800 text-sm" x-text="k.jina_kamili"></div>
+                                                <div class="text-[10px] text-emerald-600 font-bold" x-text="k.phone_number"></div>
+                                            </td>
+                                            <td class="p-6 text-[10px] font-black uppercase text-slate-500" x-text="k.nafasi_ya_uongozi"></td>
+                                            <td class="p-6 text-[10px] text-slate-400 font-bold" x-text="k.vyuo?.jina_la_chuo"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </main>
+    </template>
 
-    <aside>
-        <div class="card">
-            <h3>🎯 Lengo la Uwekezaji</h3>
-            <div id="goalText" style="font-weight:700; color:var(--primary); margin-bottom:5px;">0% Imekamilika</div>
-            <div class="bar-bg"><div id="goalBar" class="bar-fill"></div></div>
-            <input type="number" id="goalVal" placeholder="Weka Lengo la Mwaka" style="margin-top:20px;">
-            <button class="btn" style="background:var(--success)" onclick="updateGoal()">Weka Lengo</button>
-        </div>
+    <script>
+        const {{ createClient }} = supabase;
+        const client = createClient('https://xickklzlmwaobzobwyws.supabase.co', 'sb_publishable_94BpD9gpOpYyWryIhzBjog_kxQRAG4W');
 
-        <div class="card">
-            <h3>📜 Miamala ya Karibuni</h3>
-            <div id="txList" style="font-size: 0.85rem; max-height: 300px; overflow-y: auto;">
-                Inatafuta miamala...
-            </div>
-        </div>
-    </aside>
-</div>
+        function senateApp() {{
+            return {{
+                session: JSON.parse(localStorage.getItem('sen_session')) || null,
+                tab: 'colleges', 
+                isLoading: false,
+                loginData: {{ user: '', pass: '' }},
+                vyuo: [], viongozi: [],
+                mikoa: ["Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Mjini Magharibi", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pemba Kaskazini", "Pemba Kusini", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu", "Singida", "Songwe", "Tabora", "Tanga", "Unguja Kaskazini", "Unguja Kusini"],
+                formChuo: {{ jina_la_chuo: '', mkoa: '', aina_ya_chuo: '', ina_uvccm: false }},
+                formKiongozi: {{ jina_kamili: '', nafasi_ya_uongozi: '', phone_number: '', chuo_id: '' }},
 
-<script>
-    const _client = supabase.createClient("{SUPABASE_URL}", "{SUPABASE_KEY}");
-    let currentBalances = {{}};
+                async init() {{ 
+                    if(this.session) await this.fetchData(); 
+                }},
 
-    const f = (n) => new Intl.NumberFormat('en-TZ').format(Math.round(n || 0));
+                async login() {{
+                    if(!this.loginData.user || !this.loginData.pass) return alert("Jaza User na Password!");
+                    this.isLoading = true;
+                    try {{
+                        const {{ data, error }} = await client.from('watumiaji').select('*').eq('username', this.loginData.user).eq('password', this.loginData.pass).single();
+                        if (error) throw error;
+                        this.session = data;
+                        localStorage.setItem('sen_session', JSON.stringify(data));
+                        await this.fetchData();
+                    }} catch(e) {{
+                        alert("Login Imefeli!");
+                    }} finally {{
+                        this.isLoading = false;
+                    }}
+                }},
 
-    async function init() {{
-        try {{
-            // 1. Fetch Balances
-            const {{ data: bal, error: e1 }} = await _client.from('balances').select('*').eq('id', 1).single();
-            if (e1) throw e1;
-            currentBalances = bal;
+                async fetchData() {{
+                    this.isLoading = true;
+                    try {{
+                        const [resV, resK] = await Promise.all([
+                            client.from('vyuo').select('*').order('jina_la_chuo'),
+                            client.from('viongozi').select('*, vyuo(jina_la_chuo)').order('created_at', {{ascending: false}})
+                        ]);
+                        this.vyuo = resV.data || [];
+                        this.viongozi = resK.data || [];
+                    }} finally {{
+                        this.isLoading = false;
+                    }}
+                }},
 
-            // 2. Fetch Settings (Goal)
-            const {{ data: set, error: e2 }} = await _client.from('settings').select('*').eq('id', 1).single();
-            if (e2) throw e2;
-            
-            // 3. Fetch Recent Transactions
-            const {{ data: txs }} = await _client.from('transactions').select('*').order('created_at', {{ ascending: false }}).limit(5);
+                async saveChuo() {{
+                    if(!this.formChuo.aina_ya_chuo || !this.formChuo.jina_la_chuo) return alert("Jaza jina na aina ya chuo!");
+                    this.isLoading = true;
+                    const {{ error }} = await client.from('vyuo').insert([{{ ...this.formChuo }}]);
+                    if(error) alert(error.message);
+                    else {{
+                        this.formChuo = {{ jina_la_chuo: '', mkoa: '', aina_ya_chuo: '', ina_uvccm: false }};
+                        await this.fetchData();
+                    }}
+                    this.isLoading = false;
+                }},
 
-            render(bal, set.yearly_goal, txs);
-            document.getElementById('status').innerText = "✅ Cloud imesawazishwa!";
-        }} catch (err) {{
-            console.error(err);
-            document.getElementById('status').innerText = "❌ Hitilafu ya kuunganisha Database!";
+                async saveKiongozi() {{
+                    if(!this.formKiongozi.chuo_id || !this.formKiongozi.jina_kamili) return alert("Jaza kila kitu!");
+                    this.isLoading = true;
+                    const {{ error }} = await client.from('viongozi').insert([{{ ...this.formKiongozi }}]);
+                    if(error) alert(error.message);
+                    else {{
+                        this.formKiongozi = {{ jina_kamili: '', nafasi_ya_uongozi: '', phone_number: '', chuo_id: '' }};
+                        await this.fetchData();
+                    }}
+                    this.isLoading = false;
+                }},
+
+                logout() {{ 
+                    localStorage.removeItem('sen_session'); 
+                    location.reload(); 
+                }}
+            }}
         }}
-    }}
-
-    async function handleIncome() {{
-        const amt = parseFloat(document.getElementById('incomeVal').value);
-        if(!amt) return;
-
-        const update = {{
-            invest_acc: currentBalances.invest_acc + (amt * 0.50),
-            essential_acc: currentBalances.essential_acc + (amt * 0.20),
-            life_acc: currentBalances.life_acc + (amt * 0.10),
-            emergency_acc: currentBalances.emergency_acc + (amt * 0.10),
-            tithe_acc: currentBalances.tithe_acc + (amt * 0.10)
-        }};
-
-        await _client.from('balances').update(update).eq('id', 1);
-        await _client.from('transactions').insert([{{ type: 'In', category: 'Mapato', amount: amt, invested_amount: amt*0.5 }}]);
-        
-        document.getElementById('incomeVal').value = '';
-        init();
-    }
-
-    async function handleExpense() {{
-        const amt = parseFloat(document.getElementById('expenseVal').value);
-        const cat = document.getElementById('expenseType').value;
-        if(!amt || amt > currentBalances[cat]) return alert("Salio halitoshi!");
-
-        const update = {{}};
-        update[cat] = currentBalances[cat] - amt;
-
-        await _client.from('balances').update(update).eq('id', 1);
-        await _client.from('transactions').insert([{{ type: 'Out', category: cat, amount: amt }}]);
-        
-        document.getElementById('expenseVal').value = '';
-        init();
-    }
-
-    async function updateGoal() {{
-        const g = parseFloat(document.getElementById('goalVal').value);
-        await _client.from('settings').update({{ yearly_goal: g }}).eq('id', 1);
-        init();
-    }}
-
-    function render(bal, goal, txs) {{
-        document.getElementById('dashInvest').innerText = f(bal.invest_acc);
-        document.getElementById('dashEss').innerText = f(bal.essential_acc);
-        document.getElementById('dashLife').innerText = f(bal.life_acc);
-        document.getElementById('dashEmerg').innerText = f(bal.emergency_acc);
-
-        // Progress Bar
-        const pc = goal > 0 ? (bal.invest_acc / goal) * 100 : 0;
-        document.getElementById('goalBar').style.width = Math.min(pc, 100) + "%";
-        document.getElementById('goalText').innerText = pc.toFixed(1) + "% Imekamilika";
-
-        // Tx List
-        const listHtml = txs.map(t => `
-            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
-                <span>${{t.category}}</span>
-                <b style="color:${{t.type==='In'?'green':'red'}}">${{t.type==='In'?'+':'-'}}${{f(t.amount)}}</b>
-            </div>
-        `).join('');
-        document.getElementById('txList').innerHTML = listHtml;
-
-        updateChart(bal);
-    }}
-
-    let chart;
-    function updateChart(bal) {{
-        const ctx = document.getElementById('healthChart').getContext('2d');
-        if(chart) chart.destroy();
-        chart = new Chart(ctx, {{
-            type: 'doughnut',
-            data: {{
-                labels: ['Invest', 'Essential', 'Lifestyle', 'Emergency'],
-                datasets: [{{
-                    data: [bal.invest_acc, bal.essential_acc, bal.life_acc, bal.emergency_acc],
-                    backgroundColor: ['#2ecc71', '#4361ee', '#f1c40f', '#e74c3c'],
-                    borderWidth: 0
-                }}]
-            }},
-            options: {{ cutout: '75%', plugins: {{ legend: {{ position: 'bottom' }} }} }}
-        }});
-    }}
-
-    init();
-</script>
+    </script>
 </body>
 </html>
 """
 
-# 5. Execute
-components.html(html_code, height=1200, scrolling=True)
+# 5. RENDERER
+components.html(full_custom_code, height=1200, scrolling=True)
